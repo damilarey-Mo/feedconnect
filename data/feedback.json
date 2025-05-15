@@ -1,0 +1,134 @@
+[
+  {
+    "id": "1747266491780",
+    "timestamp": "2025-05-14T23:48:11.780Z",
+    "productQuality": "hbjkd",
+    "luxuryExpectations": "khjbkd",
+    "desiredItems": "kjbkjb",
+    "pricingValue": "kjbkd",
+    "pricingConcerns": "kjbd",
+    "promotionInterest": "bod",
+    "brandDiscovery": "jbkjd",
+    "brandStandout": "jbd",
+    "brandAssociation": "bjdk",
+    "storeExperience": "kjbkdj",
+    "productFindability": "kjj kdj",
+    "customerService": "jkdj",
+    "collectionAwareness": "kjbkjd",
+    "preferredChannels": "jbkdj",
+    "responseSatisfaction": "kjh kd",
+    "purchaseInfluences": "k kdj",
+    "lastPurchase": "kjjbd",
+    "purchaseBarriers": "jnkd",
+    "competitorBrands": "kjd",
+    "competitorAdvantages": "bkid"
+  },
+  {
+    "id": "1747268534992",
+    "timestamp": "2025-05-15T00:22:13.755Z",
+    "type": "text",
+    "sections": {
+      "productPerception": {
+        "id": "productPerception",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": [],
+        "voiceResponse": {
+          "audioData": "data:audio/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQRChYECGFOAZwH/////////FUmpZpkq17GDD0JATYCGQ2hyb21lV0GGQ2hyb21lFlSua7+uvdeBAXPFhy0OaBVHNUmDgQKGhkFfT1BVU2Oik09wdXNIZWFkAQEAAIC7AAAAAADhjbWERzuAAJ+BAWJkgSAfQ7Z1Af/////////ngQCjjIEAAID7A//+//7//qOMgQA8gPsD//7//v/+o4yBAHiA+wP//v/+//6jjIEAtID7A//+//7//qOMgQDwgPsD//7//v/+o4yBASyA+wP//v/+//6jjIEBaID7A//+//7//qOMgQGkgPsD//7//v/+o4yBAeCA+wP//v/+//6jjIECHID7A//+//7//qOMgQJYgPsD//7//v/+o4yBApSA+wP//v/+//6jjIEC0ID7A//+//7//qOMgQMMgPsD//7//v/+o4yBA0iA+wP//v/+//6jjIEDhID7A//+//7//qOMgQPAgPsD//7//v/+o4yBA/yA+wP//v/+//6jjIEEOID7A//+//7//qOMgQR0gPsD//7//v/+o4yBBLCA+wP//v/+//6jjIEE7ID7A//+//7//qOMgQUogPsD//7//v/+o4yBBWSA+wP//v/+//6jjIEFoID7A//+//7//qOMgQXcgPsD//7//v/+o4yBBhiA+wP//v/+//6jjIEGVID7A//+//7//qOMgQaQgPsD//7//v/+o4yBBsyA+wP//v/+//6jjIEHCID7A//+//7//qOMgQdEgPsD//7//v/+o4yBB4CA+wP//v/+//6jjIEHvID7A//+//7//qOMgQf4gPsD//7//v/+o4yBCDSA+wP//v/+//6jjIEIcID7A//+//7//qOMgQisgPsD//7//v/+o4yBCOiA+wP//v/+//6jjIEJJID7A//+//7//qOMgQlggPsD//7//v/+o4yBCZyA+wP//v/+//6jjIEJ2ID7A//+//7//qOMgQoUgPsD//7//v/+o4yBClCA+wP//v/+//6jjIEKjID7A//+//7//qOMgQrIgPsD//7//v/+o4yBCwSA+wP//v/+//6jjIELQID7A//+//7//qOMgQt8gPsD//7//v/+o4yBC7iA+wP//v/+//6jjIEL9ID7A//+//7//qOMgQwwgPsD//7//v/+o4yBDGyA+wP//v/+//6jjIEMqID7A//+//7//qOMgQzkgPsD//7//v/+o4yBDSCA+wP//v/+//6jjIENXID7A//+//7//qOMgQ2YgPsD//7//v/+o4yBDdSA+wP//v/+//4=",
+          "duration": 0,
+          "timestamp": "2025-05-15T00:21:27.378Z"
+        }
+      },
+      "pricingValue": {
+        "id": "pricingValue",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": []
+      },
+      "brandImage": {
+        "id": "brandImage",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": []
+      },
+      "customerExperience": {
+        "id": "customerExperience",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": [
+          "👍",
+          "❤️"
+        ]
+      },
+      "communication": {
+        "id": "communication",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": [
+          "❤️"
+        ]
+      },
+      "shoppingBehavior": {
+        "id": "shoppingBehavior",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": [
+          "💡"
+        ]
+      },
+      "competitorComparison": {
+        "id": "competitorComparison",
+        "sentiment": "neutral",
+        "response": "",
+        "emojiReactions": []
+      }
+    }
+  },
+  {
+    "id": "feedback_1747271572620",
+    "timestamp": "2025-05-15T01:12:52.620Z",
+    "type": "text",
+    "sections": {
+      "product-quality": {
+        "id": "product-quality",
+        "response": "kjb kj j j "
+      },
+      "customer-service": {
+        "id": "customer-service",
+        "response": "jk kj kj "
+      },
+      "website-experience": {
+        "id": "website-experience",
+        "response": "ubijbij"
+      }
+    },
+    "sentiment": {
+      "score": 0,
+      "label": "neutral",
+      "confidence": 0
+    },
+    "metadata": {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+      "platform": "unknown",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+      "ipAddress": "::1"
+    }
+  },
+  {
+    "id": "feedback_1747276774754",
+    "timestamp": "2025-05-15T02:39:34.754Z",
+    "type": "text",
+    "sections": {},
+    "sentiment": {
+      "score": 0,
+      "label": "neutral",
+      "confidence": 0
+    },
+    "metadata": {
+      "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+      "platform": "unknown",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+      "ipAddress": "::1"
+    }
+  }
+]
