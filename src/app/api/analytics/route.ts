@@ -11,7 +11,7 @@ interface LegacyFeedback {
   [key: string]: string;
 }
 
-function analyzeSentiment(text: string): { label: SentimentType; score: number } {
+function analyzeSentiment(text: string): { label: SentimentType; score: number; confidence: number } {
   // Simple sentiment analysis based on text length and content
   const words = text.toLowerCase().split(/\s+/);
   const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'perfect', 'best'];
@@ -27,41 +27,49 @@ function analyzeSentiment(text: string): { label: SentimentType; score: number }
   
   let score: number;
   let label: SentimentType;
+  let confidence: number = 0.7; // Default confidence
   
   if (positiveCount === 0 && negativeCount === 0) {
     // No sentiment words found, assume neutral
     score = 0.5;
     label = 'neutral';
+    confidence = 0.5; // Lower confidence for neutral guesses
   } else {
     const total = positiveCount + negativeCount;
     score = total === 0 ? 0.5 : (positiveCount / total);
     
     if (score > 0.6) {
       label = 'positive';
+      confidence = 0.7 + (score - 0.6) * 0.5; // Higher confidence for stronger sentiment
     } else if (score < 0.4) {
       label = 'negative';
+      confidence = 0.7 + (0.4 - score) * 0.5; // Higher confidence for stronger sentiment
     } else {
       label = 'neutral';
+      confidence = 0.6; // Moderate confidence for neutral
     }
   }
 
-  return { label, score };
+  return { label, score, confidence };
 }
 
 function convertLegacyFeedback(legacy: LegacyFeedback): FeedbackResponse {
   try {
-    const sections: Record<string, { response: string }> = {};
+    const sections: Record<string, { id: string; text?: string; audio?: { url: string; blob: Blob } }> = {};
     const excludedFields = ['id', 'timestamp'];
     
     Object.entries(legacy).forEach(([key, value]) => {
       if (!excludedFields.includes(key) && value && value.trim()) {
-        sections[key] = { response: value.trim() };
+        sections[key] = { 
+          id: key,
+          text: value.trim()
+        };
       }
     });
 
     // Calculate overall sentiment
     const allText = Object.values(sections)
-      .map(section => section.response)
+      .map(section => section.text)
       .filter(Boolean)
       .join(' ');
     
@@ -82,7 +90,7 @@ function convertLegacyFeedback(legacy: LegacyFeedback): FeedbackResponse {
       timestamp: new Date().toISOString(),
       type: 'text',
       sections: {},
-      sentiment: { label: 'neutral', score: 0.5 }
+      sentiment: { label: 'neutral', score: 0.5, confidence: 0.5 }
     };
   }
 }
@@ -139,7 +147,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<AnalyticsData>>> {
             timestamp: new Date().toISOString(),
             type: 'text',
             sections: {},
-            sentiment: { label: 'neutral', score: 0.5 }
+            sentiment: { label: 'neutral', score: 0.5, confidence: 0.5 }
           };
         }
       });
@@ -157,7 +165,8 @@ export async function GET(): Promise<NextResponse<ApiResponse<AnalyticsData>>> {
     // Calculate response types
     const responsesByType = feedback.reduce(
       (acc, item) => {
-        acc[item.type] = (acc[item.type] || 0) + 1;
+        const type = item.type || 'text';
+        acc[type as FeedbackType] = (acc[type as FeedbackType] || 0) + 1;
         return acc;
       },
       { text: 0, voice: 0 } as Record<FeedbackType, number>

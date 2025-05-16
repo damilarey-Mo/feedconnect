@@ -26,6 +26,7 @@ export interface SentimentAnalysis {
 export interface Sentiment {
   label: SentimentType;
   score: number;
+  confidence?: number;
 }
 
 export interface VoiceResponse {

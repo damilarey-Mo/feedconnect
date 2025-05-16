@@ -38,16 +38,16 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch feedback data
-      const feedbackResponse = await fetch('/api/feedback');
+      // Fetch feedback data using PHP endpoint
+      const feedbackResponse = await fetch('/api/feedback/index.php');
       if (!feedbackResponse.ok) {
         throw new Error('Failed to fetch feedback data');
       }
       const feedbackJson = await feedbackResponse.json();
       setFeedbackData(feedbackJson.data || []);
 
-      // Fetch analytics data
-      const analyticsResponse = await fetch('/api/analytics');
+      // Fetch analytics data using PHP endpoint
+      const analyticsResponse = await fetch('/api/analytics/index.php');
       if (!analyticsResponse.ok) {
         throw new Error('Failed to fetch analytics data');
       }
@@ -94,11 +94,21 @@ export default function DashboardPage() {
     if (sections.length === 0) return '';
 
     const firstSection = sections[0];
-    if (!firstSection || !firstSection.response) return '';
+    if (!firstSection) return '';
 
-    return firstSection.response.length > 50
-      ? `${firstSection.response.slice(0, 50)}...`
-      : firstSection.response;
+    if (firstSection.text) {
+      return firstSection.text.length > 50
+        ? `${firstSection.text.slice(0, 50)}...`
+        : firstSection.text;
+    } else if ('response' in firstSection) {
+      const response = (firstSection as any).response;
+      if (!response) return '';
+      return response.length > 50
+        ? `${response.slice(0, 50)}...`
+        : response;
+    }
+    
+    return '';
   };
 
   if (isLoading) {
@@ -210,14 +220,24 @@ export default function DashboardPage() {
                         {Object.entries(item.sections || {}).map(([sectionId, section]) => (
                           <div key={sectionId} className="mb-2">
                             <div className="font-medium text-gray-700">{sectionId}</div>
-                            {section.response && (
+                            {(section as any).response && (
                               <div className="text-gray-600 text-sm mt-1">
-                                {section.response}
+                                {(section as any).response}
                               </div>
                             )}
-                            {section.voiceResponse && (
+                            {section.text && (
+                              <div className="text-gray-600 text-sm mt-1">
+                                {section.text}
+                              </div>
+                            )}
+                            {(section as any).voiceResponse && (
                               <div className="text-blue-500 text-sm mt-1">
                                 Has voice response
+                              </div>
+                            )}
+                            {section.audio && (
+                              <div className="text-blue-500 text-sm mt-1">
+                                Has voice recording
                               </div>
                             )}
                           </div>

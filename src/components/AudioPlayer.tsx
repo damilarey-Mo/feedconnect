@@ -7,112 +7,117 @@ interface AudioPlayerProps {
   showDelete?: boolean;
 }
 
-interface WaveformPoint {
-  x: number;
-  y: number;
-}
-
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onDelete, showDelete = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [waveformData, setWaveformData] = useState<WaveformPoint[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyzerRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // Reset error state on new source
+    setError(null);
+    console.log(`AudioPlayer: Loading audio from ${src}`);
+
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
-    const handleEnded = () => setIsPlaying(false);
+    
+    const updateDuration = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        console.log(`AudioPlayer: Duration loaded: ${audio.duration}s`);
+        setDuration(audio.duration);
+      }
+    };
+    
+    const handleEnded = () => {
+      console.log('AudioPlayer: Playback ended');
+      setIsPlaying(false);
+    };
+    
+    const handleCanPlay = () => {
+      console.log("AudioPlayer: Audio can play now");
+      updateDuration();
+    };
+    
+    const handleError = (e: ErrorEvent) => {
+      console.error("AudioPlayer: Error loading audio", e);
+      setError(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`);
+    };
+    
+    const handleWaiting = () => {
+      console.log("AudioPlayer: Waiting for data...");
+    };
+    
+    const handlePlaying = () => {
+      console.log("AudioPlayer: Started playing");
+      setIsPlaying(true);
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError as EventListener);
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('playing', handlePlaying);
 
-    // Initialize Web Audio API
-    const initializeAudio = async () => {
-      try {
-        const response = await fetch(src);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioContext = new AudioContext();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        
-        // Get waveform data
-        const rawData = audioBuffer.getChannelData(0);
-        const points = generateWaveformPoints(rawData, 100);
-        setWaveformData(points);
-
-        // Set up audio analyzer
-        const analyzer = audioContext.createAnalyser();
-        const source = audioContext.createMediaElementSource(audio);
-        source.connect(analyzer);
-        analyzer.connect(audioContext.destination);
-        
-        audioContextRef.current = audioContext;
-        analyzerRef.current = analyzer;
-        sourceRef.current = source;
-      } catch (error) {
-        console.error('Error initializing audio:', error);
-      }
-    };
-
-    initializeAudio();
+    // Force loading the audio
+    try {
+      audio.load();
+      console.log("AudioPlayer: Audio load initiated");
+    } catch (loadError) {
+      console.error("AudioPlayer: Failed to load audio", loadError);
+      setError(`Error loading audio: ${loadError}`);
+    }
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('ended', handleEnded);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      audio.removeEventListener('error', handleError as EventListener);
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('playing', handlePlaying);
+      
+      // Clean up object URL if it appears to be a Blob URL
+      if (src && src.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(src);
+          console.log(`AudioPlayer: Revoked URL ${src}`);
+        } catch (e) {
+          console.error("AudioPlayer: Failed to revoke URL", e);
+        }
       }
     };
   }, [src]);
-
-  const generateWaveformPoints = (rawData: Float32Array, numPoints: number): WaveformPoint[] => {
-    const points: WaveformPoint[] = [];
-    const step = Math.floor(rawData.length / numPoints);
-
-    for (let i = 0; i < numPoints; i++) {
-      const start = i * step;
-      const end = start + step;
-      let max = 0;
-
-      for (let j = start; j < end; j++) {
-        const absolute = Math.abs(rawData[j]);
-        if (absolute > max) max = absolute;
-      }
-
-      points.push({
-        x: i * (100 / numPoints),
-        y: max * 50 // Scale the height to 50% of the container
-      });
-    }
-
-    return points;
-  };
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
     
     if (isPlaying) {
       audioRef.current.pause();
+      setIsPlaying(false);
+      console.log("AudioPlayer: Paused");
     } else {
-      audioRef.current.play();
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            console.log("AudioPlayer: Playing started successfully");
+          })
+          .catch(error => {
+            console.error("AudioPlayer: Error playing audio:", error);
+            setError(`Failed to play: ${error.message || 'Unknown error'}`);
+          });
+      }
     }
-    setIsPlaying(!isPlaying);
   };
 
-  const handleSeek = (e: React.MouseEvent<SVGSVGElement>) => {
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!audioRef.current || !duration) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -132,13 +137,25 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onDelete, showDel
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
-      <audio ref={audioRef} src={src} />
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        preload="auto" 
+        onError={(e) => console.error("AudioPlayer: Error event triggered", e)}
+      />
+      
+      {error && (
+        <div className="text-red-500 text-sm mb-2">
+          {error}
+        </div>
+      )}
       
       <div className="flex items-center space-x-4">
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={togglePlayPause}
-          className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+          className={`w-10 h-10 flex items-center justify-center ${error ? 'bg-gray-400' : 'bg-blue-500'} text-white rounded-full hover:${error ? 'bg-gray-500' : 'bg-blue-600'} transition-colors`}
+          disabled={!!error}
         >
           {isPlaying ? (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -152,38 +169,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onDelete, showDel
         </motion.button>
 
         <div className="flex-1">
-          <div className="relative w-full h-16 bg-gray-100 rounded-lg overflow-hidden">
-            <svg
-              className="w-full h-full cursor-pointer"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              onClick={handleSeek}
-            >
-              {/* Background waveform */}
-              <path
-                d={`M 0,50 ${waveformData.map(point => `L ${point.x},${50 - point.y} L ${point.x},${50 + point.y}`).join(' ')} L 100,50`}
-                fill="rgb(191, 219, 254)"
-                opacity="0.5"
-              />
-              {/* Progress waveform */}
-              <clipPath id="progress-clip">
-                <rect x="0" y="0" width={`${(currentTime / duration) * 100}`} height="100" />
-              </clipPath>
-              <path
-                d={`M 0,50 ${waveformData.map(point => `L ${point.x},${50 - point.y} L ${point.x},${50 + point.y}`).join(' ')} L 100,50`}
-                fill="rgb(59, 130, 246)"
-                clipPath="url(#progress-clip)"
-              />
-              {/* Playhead */}
-              <line
-                x1={`${(currentTime / duration) * 100}`}
-                y1="0"
-                x2={`${(currentTime / duration) * 100}`}
-                y2="100"
-                stroke="rgb(59, 130, 246)"
-                strokeWidth="0.5"
-              />
-            </svg>
+          <div 
+            className="relative w-full h-8 bg-gray-200 rounded-lg overflow-hidden cursor-pointer"
+            onClick={handleSeek}
+          >
+            <div 
+              className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-100"
+              style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+            ></div>
           </div>
           <div className="flex justify-between text-sm text-gray-500 mt-1">
             <span>{formatTime(currentTime)}</span>

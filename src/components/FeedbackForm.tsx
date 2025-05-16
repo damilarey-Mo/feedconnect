@@ -4,118 +4,168 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AudioPlayer } from './AudioPlayer';
 import type { FeedbackSection, SentimentType } from '@/types/feedback';
-import type { FormData as FeedbackFormData } from '@/types/feedback';
 
-const feedbackSections: FeedbackSection[] = [
+const initialSections: FeedbackSection[] = [
   {
-    id: 'product-perception',
-    title: 'Product Perception',
+    id: "product_perception",
+    title: "Product Perception",
     questions: [
-      'How would you describe our products in terms of quality, design, and uniqueness?',
-      'Do our products meet your expectations for a luxury brand? Why or why not?',
-      'Are there specific items or styles you wish we offered?'
+      "How would you describe our CG Collection in terms of quality, design, and uniqueness?",
+      "Does CG Collection meet your expectations for a luxury brand? Why or why not?"
     ]
   },
   {
-    id: 'pricing-value',
-    title: 'Pricing & Value',
+    id: "pricing_value",
+    title: "Pricing and Value",
     questions: [
-      'Do you feel our pricing reflects the value and quality of our products?',
-      'Are there any pricing concerns that have affected your purchasing decision?',
-      'Would promotions or exclusive offers make you more likely to buy?'
+      "Does our pricing tallies with the value of the Items?"
     ]
   },
   {
-    id: 'brand-image',
-    title: 'Brand Image & Awareness',
+    id: "brand_image",
+    title: "Brand Image & Awareness",
     questions: [
-      'How did you first hear about our brand?',
-      'Do you feel our brand stands out among other luxury fashion labels? Why or why not?',
-      'What comes to mind when you think of our brand?'
+      "Do you feel our brand stands out among other luxury fashion labels? Why or why not?",
+      "What comes to mind when you think of our brand?"
     ]
   },
   {
-    id: 'customer-experience',
-    title: 'Customer Experience',
+    id: "customer_experience",
+    title: "Customer Experience",
     questions: [
-      'How was your experience when visiting our store/website?',
-      'Did you find what you were looking for easily?',
-      'Was the customer service helpful, responsive, and aligned with luxury standards?'
+      "How was your experience when visiting our store/website?",
+      "Was the customer service helpful, responsive, and aligned with luxury standards?"
     ]
   },
   {
-    id: 'communication',
-    title: 'Communication & Engagement',
+    id: "communication",
+    title: "Communication & Engagement",
     questions: [
-      'Do you feel well-informed about our new collections or promotions?',
-      'How do you prefer to hear from us - email, SMS, social media, etc.?',
-      'Have you ever reached out with an inquiry and not received a timely or helpful response?'
+      "Do you feel well-informed about our new collections or promotions?",
+      "How do you prefer to hear from us — email, SMS, social media, etc.?"
     ]
   },
   {
-    id: 'shopping-behavior',
-    title: 'Shopping Behavior',
+    id: "shopping_behavior",
+    title: "Shopping Behavior",
     questions: [
-      'What influences your decision to purchase luxury fashion items?',
-      'When was the last time you purchased from us, and why did you choose us then?',
-      'If you did not make a purchase recently, what held you back?'
+      "If you didn't make a purchase recently, what held you back?"
     ]
   },
   {
-    id: 'competitor-comparison',
-    title: 'Competitor Comparison',
+    id: "competitor_comparison",
+    title: "Competitor Comparison",
     questions: [
-      'Which other luxury brands do you shop from, and what makes you choose them?',
-      'What do you feel those brands do better than we do?'
+      "What do you feel we should do better to improve our services?"
     ]
   }
 ];
 
+// Define local interfaces for storing form data
+interface QuestionResponse {
+  text?: string;
+  audio?: {
+    url: string;
+    blob: Blob;
+  };
+}
+
+interface FormData {
+  [sectionId: string]: {
+    [questionIndex: number]: QuestionResponse;
+  };
+}
+
 export function FeedbackForm() {
+  const [showOverview, setShowOverview] = useState(true);
   const [currentSection, setCurrentSection] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [showOverview, setShowOverview] = useState(true);
-  const [formData, setFormData] = useState<Record<string, Record<number, { text?: string; audio?: { url: string; blob: Blob } }>>>({});
+  const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
+  const [formData, setFormData] = useState<FormData>({});
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [direction, setDirection] = useState(0); // -1 for back, 1 for forward
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  const currentSectionData = feedbackSections[currentSection];
-  const progress = ((currentSection * 3 + currentQuestion + 1) / (feedbackSections.length * 3)) * 100;
+  const currentSectionData = initialSections[currentSection];
+  const progress = ((currentSection * 3 + currentQuestion + 1) / (initialSections.length * 3)) * 100;
   const isLastQuestion = currentQuestion === currentSectionData.questions.length - 1;
-  const isLastSection = currentSection === feedbackSections.length - 1;
+  const isLastSection = currentSection === initialSections.length - 1;
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Stop any existing recording first
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        stopRecording();
+      }
+
+      // Get supported MIME types for recording
+      let mimeType = 'audio/webm';
+      
+      // Test for browser MIME type support
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        mimeType = 'audio/ogg';
+      }
+      
+      console.log(`Using MIME type: ${mimeType}`);
+      
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       const audioChunks: BlobPart[] = [];
 
+      // Set up event handlers
       mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
+        if (event.data && event.data.size > 0) {
+          console.log(`Received audio chunk: ${event.data.size} bytes`);
+          audioChunks.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
+        // Create blob from chunks
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
+        console.log(`Created audio blob: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
         
-        setFormData(prev => ({
-          ...prev,
-          [currentSectionData.id]: {
-            ...prev[currentSectionData.id],
-            [currentQuestion]: {
-              ...prev[currentSectionData.id]?.[currentQuestion],
-              audio: { url: audioUrl, blob: audioBlob }
+        // Create object URL
+        const audioUrl = URL.createObjectURL(audioBlob);
+        console.log(`Created audio URL: ${audioUrl}`);
+        
+        // Update form data with the audio recording
+        setFormData(prev => {
+          const updatedData = {
+            ...prev,
+            [currentSectionData.id]: {
+              ...prev[currentSectionData.id] || {},
+              [currentQuestion]: {
+                ...(prev[currentSectionData.id]?.[currentQuestion] || {}),
+                audio: { url: audioUrl, blob: audioBlob }
+              }
             }
-          }
-        }));
+          };
+          console.log("Updated form data with audio recording");
+          return updatedData;
+        });
       };
 
+      // Start recording with timeslice of 250ms to get data more frequently
+      mediaRecorder.start(250);
       mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
       setIsRecording(true);
+      
+      console.log("Recording started...");
     } catch (error) {
       console.error('Error accessing microphone:', error);
       alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
@@ -123,9 +173,24 @@ export function FeedbackForm() {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    if (!mediaRecorderRef.current) return;
+    
+    try {
+      if (mediaRecorderRef.current.state !== 'inactive') {
+        console.log("Stopping recording...");
+        mediaRecorderRef.current.stop();
+      }
+      
+      if (mediaRecorderRef.current.stream) {
+        console.log("Stopping all audio tracks...");
+        mediaRecorderRef.current.stream.getTracks().forEach(track => {
+          track.stop();
+          console.log(`Stopped track: ${track.kind}, ${track.id}`);
+        });
+      }
+    } catch (err) {
+      console.error("Error stopping recording:", err);
+    } finally {
       setIsRecording(false);
     }
   };
@@ -147,7 +212,7 @@ export function FeedbackForm() {
     if (currentQuestion === 0) {
       if (currentSection > 0) {
         setCurrentSection(prev => prev - 1);
-        setCurrentQuestion(feedbackSections[currentSection - 1].questions.length - 1);
+        setCurrentQuestion(initialSections[currentSection - 1].questions.length - 1);
       }
     } else {
       setCurrentQuestion(prev => prev - 1);
@@ -164,33 +229,76 @@ export function FeedbackForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrors({});
 
     try {
+      console.log("Preparing form data for submission...");
       const formDataToSend = new FormData();
       
+      // Add metadata about the submission
+      formDataToSend.append('submission_time', new Date().toISOString());
+      formDataToSend.append('feedback_type', 'product_feedback');
+      
+      // Track the number of audio files for logging
+      let audioFileCount = 0;
+      
+      // Process each section and question
       Object.entries(formData).forEach(([sectionId, questions]) => {
         Object.entries(questions).forEach(([questionIndex, data]) => {
-          if (data.text) {
-            formDataToSend.append(`${sectionId}_${questionIndex}_text`, data.text);
+          const textFieldName = `${sectionId}_${questionIndex}_text`;
+          const audioFieldName = `${sectionId}_${questionIndex}_voice`;
+          
+          // Add text response if available
+          if (data.text && data.text.trim()) {
+            console.log(`Adding text response for ${textFieldName}`);
+            formDataToSend.append(textFieldName, data.text.trim());
           }
+          
+          // Add audio response if available
           if (data.audio?.blob) {
-            formDataToSend.append(`${sectionId}_${questionIndex}_voice`, data.audio.blob);
+            console.log(`Adding audio file (${data.audio.blob.size} bytes) for ${audioFieldName}`);
+            
+            // Create a filename with extension to help the server identify it
+            const filename = `voice_${sectionId}_${questionIndex}_${Date.now()}.webm`;
+            
+            // Append file to FormData with proper filename
+            const audioFile = new File([data.audio.blob], filename, { 
+              type: data.audio.blob.type 
+            });
+            
+            formDataToSend.append(audioFieldName, audioFile);
+            audioFileCount++;
           }
         });
       });
+      
+      console.log(`Submitting form with ${audioFileCount} audio files...`);
 
-      const response = await fetch('/api/feedback', {
+      // Log form data entries for debugging
+      Array.from(formDataToSend.entries()).forEach(pair => {
+        console.log(`FormData Entry: ${pair[0]}, ${pair[1] instanceof File ? 'File: ' + (pair[1] as File).name : pair[1]}`);
+      });
+
+      // Use the PHP endpoint instead of the Next.js API route
+      const response = await fetch('/api/feedback/index.php', {
         method: 'POST',
         body: formDataToSend
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit feedback');
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || 'Failed to submit feedback');
       }
 
+      const responseData = await response.json();
+      console.log("Submission successful:", responseData);
+      
       setSubmitSuccess(true);
     } catch (error) {
       console.error('Error submitting feedback:', error);
+      setErrors({ 
+        form: error instanceof Error ? error.message : 'Failed to submit feedback. Please try again.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -215,7 +323,7 @@ export function FeedbackForm() {
         </motion.div>
 
         <div className="grid gap-4">
-          {feedbackSections.map((section, index) => (
+          {initialSections.map((section, index) => (
             <motion.div
               key={section.id}
               initial={{ opacity: 0, x: -20 }}
@@ -268,7 +376,7 @@ export function FeedbackForm() {
         </div>
         
         <div className="flex gap-1">
-          {feedbackSections.map((section, index) => (
+          {initialSections.map((section, index) => (
             <div key={section.id} className="flex-1">
               <div className={`h-2 rounded-full transition-colors duration-500 ${getProgressColor(index)}`} />
             </div>
@@ -322,9 +430,9 @@ export function FeedbackForm() {
               onChange={(e) => setFormData(prev => ({
                 ...prev,
                 [currentSectionData.id]: {
-                  ...prev[currentSectionData.id],
+                  ...prev[currentSectionData.id] || {},
                   [currentQuestion]: {
-                    ...prev[currentSectionData.id]?.[currentQuestion],
+                    ...(prev[currentSectionData.id]?.[currentQuestion] || {}),
                     text: e.target.value
                   }
                 }
@@ -368,14 +476,14 @@ export function FeedbackForm() {
             {formData[currentSectionData.id]?.[currentQuestion]?.audio && (
               <div className="mt-4">
                 <AudioPlayer
-                  src={formData[currentSectionData.id][currentQuestion].audio!.url}
+                  src={formData[currentSectionData.id]?.[currentQuestion]?.audio?.url || ''}
                   onDelete={() => {
                     setFormData(prev => ({
                       ...prev,
                       [currentSectionData.id]: {
-                        ...prev[currentSectionData.id],
+                        ...prev[currentSectionData.id] || {},
                         [currentQuestion]: {
-                          ...prev[currentSectionData.id]?.[currentQuestion],
+                          ...(prev[currentSectionData.id]?.[currentQuestion] || {}),
                           audio: undefined
                         }
                       }

@@ -41,8 +41,10 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<V
     // For now, we'll return a simple response
 
     const voiceFeedback: VoiceFeedback = {
+      audioData: buffer.toString('base64'),
+      timestamp: new Date().toISOString(),
       duration: 0, // You would calculate this from the audio file
-      url: `/api/feedback/voice/${fileName}`,
+      audioUrl: `/api/feedback/voice/${fileName}`,
       transcription: undefined // You would add transcription service here
     };
 

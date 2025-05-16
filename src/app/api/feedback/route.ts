@@ -72,7 +72,14 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<F
 
     // Analyze sentiment for text responses only
     const allText = Object.values(body.sections)
-      .map(section => (section as FeedbackSection).response)
+      .map((section: any) => {
+        if (section && 'text' in section) {
+          return section.text;
+        } else if (section && 'response' in section) {
+          return section.response;
+        }
+        return '';
+      })
       .filter(Boolean)
       .join(' ');
     

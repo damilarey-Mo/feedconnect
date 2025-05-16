@@ -36,7 +36,7 @@ export default function Home() {
           >
             <div className="relative w-[300px] h-[50px]">
               <Image 
-                src="/images/logo.svg" 
+                src="/images/cg_logo.png" 
                 alt="Crownedgear Luxury" 
                 fill
                 priority
